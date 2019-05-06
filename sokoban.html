@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="jp">
+	<head>
+		<title>sokoban</title>
+		<meta charset="utf-8">
+		<link rel="shortcut icon" href="./sokoban5.png">
+		<style type="text/css">
+			
+			body {
+				background-color: #111;
+				color: #eee;
+			}
+			
+			#field {
+				position:relative;
+				margin: 8px;
+			}
+			
+			.stageButton {
+				display: inline-block;
+				margin: 2px;
+				padding: 4px 2px;
+				background-color: #eee;
+				color: #999;
+				border-radius: 3px;
+				cursor: pointer;
+			}
+			
+			.stageButtonOpened {
+				display: inline-block;
+				margin: 2px;
+				padding: 4px 2px;
+				background-color: #eee;
+				color: #34f;
+				border-radius: 3px;
+				cursor: pointer;
+			}
+			
+			.stageButtonOpened:hover {
+				background-color: #34f;
+				color: #eee;
+			}
+			
+			.controleButton {
+				display: inline-block;
+				background-color: #eee;
+				color: #444;
+				margin: 4px;
+				padding: 10px;
+				text-align: center;
+				border: solid 3px #666;
+				border-radius: 5px;
+				cursor: pointer;
+			}
+			
+			.controleButton:hover {
+				border: solid 3px #e44;
+			}
+			
+		</style>
+	</head>
+	<body>
+		
+		<div id="stages"></div>
+		
+		<div id="field">
+		</div>
+		
+		<div class="controleButton" onclick="document.onkeydown({keyCode: 37}); return false;">←</div>
+		<div class="controleButton" onclick="document.onkeydown({keyCode: 38}); return false;">↑</div>
+		<div class="controleButton" onclick="document.onkeydown({keyCode: 40}); return false;">↓</div>
+		<div class="controleButton" onclick="document.onkeydown({keyCode: 39}); return false;">→</div>
+		
+		<br><br>
+		
+		<input id="sound" type="checkbox">さうんど
+		
+		<audio id="audio0" loop="true">
+			<source src="./puz.mp3">
+			<source src="./puz.ogg">
+		</audio>
+		
+		<audio id="audio1">
+			<source src="./puz2.mp3">
+			<source src="./puz2.ogg">
+		</audio>
+		
+		<audio id="audio2" loop="true">
+			<source src="./puz3.mp3">
+			<source src="./puz3.ogg">
+		</audio>
+		
+		<script type="text/javascript">
+			
+			var elmStages = document.getElementById("stages");
+			var elmField = document.getElementById("field");
+			var elmSound = document.getElementById("sound");
+			var audio0 = document.getElementById("audio0");
+			var audio1 = document.getElementById("audio1");
+			var audio2 = document.getElementById("audio2");
+			
+			
+			var audios = [audio0, audio1, audio2];
+			var audioIndex = -1;
+			
+			
+			var stages = [
+				{
+					playerX : 4,
+					playerY : 5,
+					field : [
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 0, 0, 2, 0, 1, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+					]
+				},
+				{
+					playerX : 3,
+					playerY : 3,
+					field : [
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 0, 0, 0, 0, 1, 4, 4, 4, 4],
+						[4, 4, 4, 2, 4, 4, 4, 0, 4, 4, 4, 4],
+						[4, 4, 0, 0, 4, 4, 4, 0, 4, 4, 4, 4],
+						[4, 4, 0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 0, 0, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+					]
+				},
+				{
+					playerX : 6,
+					playerY : 6,
+					field : [
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 0, 0, 0, 1, 4, 4, 4, 4],
+						[4, 4, 4, 4, 0, 2, 2, 0, 4, 4, 4, 4],
+						[4, 4, 4, 4, 0, 2, 0, 0, 4, 4, 4, 4],
+						[4, 4, 4, 4, 1, 0, 0, 1, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+					]
+				},
+				{
+					playerX : 5,
+					playerY : 7,
+					field : [
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 0, 2, 0, 0, 1, 4, 4, 4, 4],
+						[4, 4, 4, 0, 4, 0, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 1, 0, 2, 2, 0, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 0, 4, 0, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 0, 0, 0, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 1, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+					]
+				},
+				{
+					playerX : 5,
+					playerY : 4,
+					field : [
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 0, 0, 0, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 0, 4, 0, 4, 4, 4, 4],
+						[4, 4, 4, 0, 1, 2, 2, 2, 0, 4, 4, 4],
+						[4, 4, 4, 0, 4, 0, 0, 1, 0, 4, 4, 4],
+						[4, 4, 4, 0, 2, 1, 1, 0, 0, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+					]
+				},
+				{
+					playerX : 5,
+					playerY : 5,
+					field : [
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 0, 1, 1, 0, 0, 4, 4, 4],
+						[4, 4, 4, 0, 4, 0, 2, 4, 0, 4, 4, 4],
+						[4, 4, 4, 0, 2, 0, 0, 2, 1, 0, 4, 4],
+						[4, 4, 4, 1, 2, 0, 0, 2, 0, 0, 4, 4],
+						[4, 4, 4, 0, 4, 2, 0, 4, 0, 0, 4, 4],
+						[4, 4, 4, 0, 0, 1, 1, 0, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+					]
+				},
+				{
+					playerX : 6,
+					playerY : 5,
+					field : [
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 1, 1, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 0, 2, 1, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 0, 2, 0, 1, 4, 4, 4, 4],
+						[4, 4, 4, 0, 2, 0, 2, 2, 1, 4, 4, 4],
+						[4, 4, 4, 0, 0, 2, 0, 0, 1, 4, 4, 4],
+						[4, 4, 4, 0, 0, 0, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+					]
+				},
+				{
+					playerX : 3,
+					playerY : 3,
+					field : [
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 4, 4],
+						[4, 4, 4, 0, 4, 2, 2, 2, 4, 0, 4, 4],
+						[4, 4, 4, 0, 3, 0, 1, 1, 1, 0, 4, 4],
+						[4, 4, 4, 0, 0, 4, 0, 4, 0, 0, 4, 4],
+						[4, 4, 4, 0, 1, 1, 1, 0, 3, 0, 4, 4],
+						[4, 4, 4, 0, 4, 2, 2, 2, 4, 4, 4, 4],
+						[4, 4, 4, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+					]
+				},
+				{
+					playerX : 5,
+					playerY : 4,
+					field : [
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 0, 0, 0, 0, 0, 1, 0, 4, 4, 4],
+						[4, 4, 1, 4, 0, 4, 4, 4, 0, 4, 4, 4],
+						[4, 4, 2, 0, 2, 0, 0, 2, 0, 4, 4, 4],
+						[4, 4, 0, 4, 0, 4, 0, 4, 0, 4, 4, 4],
+						[4, 4, 1, 0, 0, 0, 2, 2, 1, 4, 4, 4],
+						[4, 4, 0, 4, 4, 4, 0, 4, 0, 4, 4, 4],
+						[4, 4, 0, 0, 0, 1, 0, 0, 0, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+						[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+					]
+				}
+			];
+			
+			var stageIndex = 0;
+			var stageCleared = false;
+			var openedStage = 0;
+			var useLocalstorage = false;
+			
+			var field;
+			
+			var playerX = 1;
+			var playerY = 1;
+			
+			
+			function printField() {
+				elmField.innerHTML = "";
+				
+				elmField.style.height = (field.length * 32) + "px";
+				
+				var img = document.createElement("img");
+				img.style.width = "32px";
+				img.style.height = "32px";
+				img.style.position = "absolute";
+				
+				for(var i = 0, il = field.length; i < il; ++i) {
+					var fl = field[i]
+					for(var j = 0, jl = fl.length; j < jl; ++j) {
+						var elm = img.cloneNode();
+						elm.src = getImage(fl[j]);//"./sokoban" + fl[j] + ".png";
+						elm.style.top = (i * 32) + "px";
+						elm.style.left = (j * 32) + "px";
+						elm.id = "field" + i + "_" + j;
+						elmField.appendChild(elm);
+					}
+					//elmField.appendChild(elm);
+				}
+				
+				var elm = img.cloneNode();
+				elm.src = getImage(5);//"./sokoban5.png";
+				elm.style.top = (playerY * 32) + "px";
+				elm.style.left = (playerX * 32) + "px";
+				elm.id = "player";
+				elmField.appendChild(elm);
+			};
+			
+			function updateField() {
+				for(var i = 0, il = field.length; i < il; ++i) {
+					var fl = field[i]
+					for(var j = 0, jl = fl.length; j < jl; ++j) {
+						var elm = document.getElementById("field" + i + "_" + j);
+						elm.src = getImage(fl[j]);//"./sokoban" + fl[j] + ".png";
+					}
+				}
+				var elm = document.getElementById("player");
+				elm.style.top = (playerY * 32) + "px";
+				elm.style.left = (playerX * 32) + "px";
+			}
+			
+			function isClear() {
+				for(var i = 0, il = field.length; i < il; ++i) {
+					var fl = field[i]
+					for(var j = 0, jl = fl.length; j < jl; ++j) {
+						if(fl[j] == 2) {
+							return false;
+						}
+					}
+				}
+				return true;
+			};
+			
+			window.onload = function() {
+				openedStage = 0;
+				useLocalStorage = (window.localStorage != undefined);
+				if(useLocalStorage) {
+					if(window.localStorage["sokoban.openedStage"] == undefined) {
+						window.localStorage["sokoban.openedStage"] = openedStage;
+					} else {
+						openedStage = parseInt(window.localStorage["sokoban.openedStage"]);
+					}
+				}
+				
+				for(var i = 0, len = stages.length; i < len; ++i) {
+					var elm = document.createElement("div");
+					elm.innerHTML = "すてーじ" + (i + 1);
+					elm.id = "stage" + (i + 1);
+					elm.className = (i <= openedStage ? "stageButtonOpened" : "stageButton");
+					elm.onclick = (function(i) {return function() {clickStage(i)};})(i);
+					elmStages.appendChild(elm);
+				}
+				
+				clickStage(0);
+			};
+			
+			function stageClear() {
+				stageCleared = true;
+				playAudio(1);
+				
+				if(stageIndex + 1 == stages.length) {
+					alert(decodeURIComponent("%E3%81%93%E3%82%93%E3%81%90%E3%82%89%E3%81%A1%E3%82%85%E3%82%8C%E3%83%BC%E3%81%97%E3%82%87%E3%82%93%E3%81%9A%EF%BC%81"));
+					playAudio(2);
+				} else if(openedStage == stageIndex) {
+					openedStage += 1;
+					if(useLocalStorage) {
+						window.localStorage["sokoban.openedStage"] = openedStage;
+					}
+					document.getElementById("stage" + (openedStage + 1)).className = "stageButtonOpened";
+				}
+				
+			};
+			
+			function clickStage(idx) {
+				if(openedStage < idx) {
+					return;
+				}
+				
+				stageIndex = idx;
+				stageCleared = false;
+				
+				field = new Array(stages[stageIndex].field.length);
+				for(var i = 0, il = stages[stageIndex].field.length; i < il; ++i) {
+					var fl = stages[stageIndex].field[i];
+					field[i] = new Array(fl.length);
+					for(var j = 0, jl = fl.length; j < jl; ++j) {
+						field[i][j] = fl[j];
+					}
+				}
+				playerX = stages[stageIndex].playerX;
+				playerY = stages[stageIndex].playerY;
+				
+				printField();
+				playAudio(0);
+			};
+			
+			document.onkeydown = function(e) {
+				if(stageCleared) {
+					return true;
+				}
+				
+				switch(e.keyCode) {
+				case 37:
+					if(field[playerY][playerX - 1] < 2) {
+						playerX += -1;
+					} else if((field[playerY][playerX - 1] == 2 || field[playerY][playerX - 1] == 3) && field[playerY][playerX - 2] < 2) {
+						field[playerY][playerX - 1] -= 2;
+						field[playerY][playerX - 2] += 2;
+						playerX += -1;
+					}
+					updateField();
+					if(isClear()) {
+						stageClear();
+					}
+					return false;
+					break;
+				case 38:
+					if(field[playerY - 1][playerX] < 2) {
+						playerY += -1;
+					} else if((field[playerY - 1][playerX] == 2 || field[playerY - 1][playerX] == 3) && field[playerY - 2][playerX] < 2) {
+						field[playerY - 1][playerX] -= 2;
+						field[playerY - 2][playerX] += 2;
+						playerY += -1;
+					}
+					updateField();
+					if(isClear()) {
+						stageClear();
+					}
+					return false;
+					break;
+				case 39:
+					if(field[playerY][playerX + 1] < 2) {
+						playerX += 1;
+					} else if((field[playerY][playerX + 1] == 2 || field[playerY][playerX + 1] == 3) && field[playerY][playerX + 2] < 2) {
+						field[playerY][playerX + 1] -= 2;
+						field[playerY][playerX + 2] += 2;
+						playerX += 1;
+					}
+					updateField();
+					if(isClear()) {
+						stageClear();
+					}
+					return false;
+					break;
+				case 40:
+					if(field[playerY + 1][playerX] < 2) {
+						playerY += 1;
+					} else if((field[playerY + 1][playerX] == 2 || field[playerY + 1][playerX] == 3) && field[playerY + 2][playerX] < 2) {
+						field[playerY + 1][playerX] -= 2;
+						field[playerY + 2][playerX] += 2;
+						playerY += 1;
+					}
+					updateField();
+					if(isClear()) {
+						stageClear();
+					}
+					return false;
+					break;
+				}
+				return true;
+			};
+			
+			elmSound.onclick = function() {
+				if(audioIndex == -1) {
+					return;
+				}
+				
+				if(elmSound.checked) {
+					if(audios[audioIndex].loop) {
+						audios[audioIndex].currentTime = 0;
+						audios[audioIndex].play();
+					}
+				} else {
+					audios[audioIndex].pause();
+				}
+			};
+			
+			function playAudio(i) {
+				if(audioIndex != -1) {
+					audios[audioIndex].pause();
+				}
+				audioIndex = i;
+				if(elmSound.checked && audioIndex != -1) {
+					audios[audioIndex].currentTime = 0;
+					audios[audioIndex].play();
+				}
+			};
+			
+			function getImage(i) {
+				return 'data:image/png;base64,' + [
+'iVBORw0KGgoAAAANSUhEUgAAAFAAAABQAQMAAAC032DuAAAABGdBTUEAALGPC/xhBQAAAAZQTFRF'+
+'w8DX7u78twch0QAAAEtJREFUKM9j+A8HDCQym8lnfqgnkXmAgfn/DwYGUplk+41sJjsQP6AP8wMD'+
+'A/s/BiAgjUn3ICGL+UceHP30YALTCoM8ONWQxCTPbwCRr6hgDzY/TAAAAABJRU5ErkJggg==',
+'iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAMAAAC5zwKfAAAACVBMVEXDwNf/SoHu7vxiAws0AAAA'+
+'XklEQVR42u3YQQoAIAgAQev/jw68JRUEGpi755ibBkp3DtALbC4BAtYBZc7O1SLAcLBfBwgIaKfu'+
+'DOoTQMA6oOwyvgboDn60YAEBAQHt1wQYDaa/OQACPgZT3bFLgQOseiS57WckLQAAAABJRU5ErkJg'+
+'gg==',
+'iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAMAAAC5zwKfAAAAD1BMVEXDwNfOwysX02bu7vzx3xcU'+
+'D3t8AAAAX0lEQVR42u3WMQ7AIAwEQQfn/29GUODqUsRIgNitT9NZsvnoVZWRnIQCCAgICAjoXhIB'+
+'At4Dpk/PWoCAgBrsFOBe4KG/DSDgD/BRBSgngICAgGtA+8wjNQacDuYDnFkFf7ZFJfWcYQMAAAAA'+
+'SUVORK5CYII=',
+'iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAMAAAC5zwKfAAAAElBMVEXDwNfOwyv/SoHu7vwX02bx'+
+'3xcgOM7GAAAAXklEQVR42u3WMQ6AIBBFQVS8/5UNFlBt45IQ4rz6Z7pNtly9O6r2wslQgLPAs5UB'+
+'XwAIBALXgDUREPgfMH16pQUEAoH7gfv9NkDgB/CIGmA4AQKBwEVgNuBccF7AST3noFaghuPPxAAA'+
+'AABJRU5ErkJggg==',
+'iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAMAAAC5zwKfAAAABlBMVEVfLiWgUEiqZgQSAAAAb0lE'+
+'QVR42u3USwqAMBAEUb3/pUU3DQ5RhmnDqFW7/N4mIcupdW84DAtxC2AFjCuZhscAHwe1CjgbPAJs'+
+'A6rKj6o5QAPouVtAL5ju+hhgHXzzs/kumPjs7jYDukDP3WoIaAUVYC+w/7P5A0hERGRqA1hVDTDF'+
+'pHLDAAAAAElFTkSuQmCC',
+'iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAMAAAC5zwKfAAAACVBMVEUAAAAKERFfr/BkH3/ZAAAA'+
+'AXRSTlMAQObYZgAAAFZJREFUeNrt1UEKwCAMAEH1/4+WehTRQqEamb0FwtxCkmJWBgH3gWUa8D+w'+
+'t/JTNwKBwDdXB9wM5kHAT6BLuQNs20AgcGEBA4MtIBAIDAXe8UGDgDqgCmFZFFFd8xi2AAAAAElF'+
+'TkSuQmCC'
+				][i];
+			};
+			
+		</script>
+	</body>
+</html>
